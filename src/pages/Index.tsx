@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -169,8 +170,10 @@ export default function Index() {
               </h1>
             </div>
             <nav className="hidden md:flex gap-6">
-              <Button variant="ghost">Главная</Button>
-              <Button variant="ghost">Каталог</Button>
+              <Button variant="default">Главная</Button>
+              <Link to="/catalog">
+                <Button variant="ghost">Каталог</Button>
+              </Link>
               <Button variant="ghost">Топ-100</Button>
               <Button variant="ghost">Блог</Button>
               <Button variant="ghost">О нас</Button>
