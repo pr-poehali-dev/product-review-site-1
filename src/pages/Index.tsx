@@ -7,6 +7,17 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const categories = [
   { name: 'Электроника', icon: 'Laptop', count: 1243 },
@@ -24,10 +35,19 @@ const products = [
     rating: 4.8,
     reviews: 1234,
     price: '89 990 ₽',
+    numPrice: 89990,
     trend: 'up',
     ratings: { 5: 75, 4: 15, 3: 6, 2: 2, 1: 2 },
     topReview: 'Отличная камера и батарея держит 2 дня!',
     reviewAuthor: 'Алексей М.',
+    specs: {
+      screen: '6.7"',
+      battery: '5000 мАч',
+      camera: '108 МП',
+      processor: 'Snapdragon 8 Gen 2',
+      memory: '12 ГБ / 256 ГБ',
+    },
+    trendData: [4.5, 4.6, 4.7, 4.8, 4.8, 4.8, 4.8],
   },
   {
     id: 2,
@@ -36,10 +56,19 @@ const products = [
     rating: 4.6,
     reviews: 892,
     price: '12 990 ₽',
+    numPrice: 12990,
     trend: 'up',
     ratings: { 5: 68, 4: 20, 3: 8, 2: 3, 1: 1 },
     topReview: 'Шумоподавление на высоте, удобные',
     reviewAuthor: 'Мария К.',
+    specs: {
+      type: 'Накладные',
+      battery: '30 часов',
+      bluetooth: '5.2',
+      anc: 'Активное шумоподавление',
+      weight: '250 г',
+    },
+    trendData: [4.4, 4.5, 4.5, 4.6, 4.6, 4.6, 4.6],
   },
   {
     id: 3,
@@ -48,10 +77,19 @@ const products = [
     rating: 4.9,
     reviews: 2156,
     price: '19 990 ₽',
+    numPrice: 19990,
     trend: 'up',
     ratings: { 5: 85, 4: 10, 3: 3, 2: 1, 1: 1 },
     topReview: 'Лучшие часы для спорта!',
     reviewAuthor: 'Дмитрий П.',
+    specs: {
+      screen: '1.4" AMOLED',
+      battery: '7 дней',
+      waterproof: '5 ATM',
+      sensors: 'GPS, пульсометр, SpO2',
+      weight: '42 г',
+    },
+    trendData: [4.7, 4.8, 4.8, 4.9, 4.9, 4.9, 4.9],
   },
 ];
 
@@ -64,6 +102,58 @@ const trendingProducts = [
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [compareList, setCompareList] = useState<number[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    name: '',
+    rating: 5,
+    title: '',
+    text: '',
+  });
+  const { toast } = useToast();
+
+  const toggleCompare = (productId: number) => {
+    if (compareList.includes(productId)) {
+      setCompareList(compareList.filter((id) => id !== productId));
+      toast({
+        title: 'Товар удалён из сравнения',
+        description: 'Вы можете добавить другой товар',
+      });
+    } else if (compareList.length < 3) {
+      setCompareList([...compareList, productId]);
+      toast({
+        title: 'Товар добавлен в сравнение',
+        description: `Выбрано товаров: ${compareList.length + 1}/3`,
+      });
+    } else {
+      toast({
+        title: 'Лимит достигнут',
+        description: 'Можно сравнить максимум 3 товара',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm.name || !reviewForm.title || !reviewForm.text) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните все обязательные поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({
+      title: 'Отзыв отправлен!',
+      description: 'Ваш отзыв будет опубликован после модерации',
+    });
+    setIsReviewFormOpen(false);
+    setReviewForm({ name: '', rating: 5, title: '', text: '' });
+  };
+
+  const comparedProducts = products.filter((p) => compareList.includes(p.id));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
@@ -85,10 +175,25 @@ export default function Index() {
               <Button variant="ghost">Блог</Button>
               <Button variant="ghost">О нас</Button>
             </nav>
-            <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
-              <Icon name="Plus" size={18} className="mr-2" />
-              Добавить отзыв
-            </Button>
+            <div className="flex gap-3">
+              {compareList.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCompareOpen(true)}
+                  className="border-2 border-primary hover:bg-primary/10"
+                >
+                  <Icon name="GitCompare" size={18} className="mr-2" />
+                  Сравнить ({compareList.length})
+                </Button>
+              )}
+              <Button
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                onClick={() => setIsReviewFormOpen(true)}
+              >
+                <Icon name="Plus" size={18} className="mr-2" />
+                Добавить отзыв
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -240,8 +345,18 @@ export default function Index() {
                       </div>
                       <div className="text-right">
                         <div className="text-3xl font-bold text-primary">{product.price}</div>
-                        <Button size="sm" className="mt-2 bg-gradient-to-r from-primary to-secondary">
-                          Сравнить
+                        <Button
+                          size="sm"
+                          className="mt-2 bg-gradient-to-r from-primary to-secondary"
+                          onClick={() => toggleCompare(product.id)}
+                          variant={compareList.includes(product.id) ? 'default' : 'outline'}
+                        >
+                          <Icon
+                            name={compareList.includes(product.id) ? 'Check' : 'GitCompare'}
+                            size={16}
+                            className="mr-1"
+                          />
+                          {compareList.includes(product.id) ? 'Выбран' : 'Сравнить'}
                         </Button>
                       </div>
                     </div>
@@ -464,6 +579,269 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold flex items-center gap-2">
+              <Icon name="GitCompare" className="text-primary" />
+              Сравнение товаров
+            </DialogTitle>
+            <DialogDescription>
+              Детальное сравнение характеристик выбранных товаров
+            </DialogDescription>
+          </DialogHeader>
+
+          {comparedProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Icon name="PackageX" size={64} className="mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Добавьте товары для сравнения</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {comparedProducts.map((product) => (
+                  <Card key={product.id} className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{product.name}</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Icon
+                              key={i}
+                              name="Star"
+                              size={14}
+                              className={
+                                i < Math.floor(product.rating)
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-gray-300'
+                              }
+                            />
+                          ))}
+                          <span className="ml-2 font-bold">{product.rating}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleCompare(product.id)}
+                        >
+                          <Icon name="X" size={16} />
+                        </Button>
+                      </div>
+                      <div className="text-2xl font-bold text-primary">{product.price}</div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Рейтинг и отзывы</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {comparedProducts.map((product) => (
+                      <div key={product.id} className="flex items-center gap-4">
+                        <div className="w-48 font-medium">{product.name}</div>
+                        <div className="flex-1">
+                          <Progress value={product.rating * 20} className="h-3" />
+                        </div>
+                        <div className="w-32 text-right">
+                          <span className="font-bold text-lg">{product.rating}</span>
+                          <span className="text-muted-foreground text-sm ml-2">
+                            ({product.reviews})
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Характеристики</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.keys(comparedProducts[0].specs).map((specKey) => (
+                      <div key={specKey} className="border-b pb-3 last:border-0">
+                        <div className="font-semibold text-sm text-muted-foreground mb-2 capitalize">
+                          {specKey}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {comparedProducts.map((product) => (
+                            <div key={product.id} className="text-sm">
+                              {product.specs[specKey as keyof typeof product.specs]}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Тренд рейтинга (последние 30 дней)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {comparedProducts.map((product) => (
+                      <div key={product.id}>
+                        <div className="font-medium mb-2">{product.name}</div>
+                        <div className="flex items-end gap-2 h-24">
+                          {product.trendData.map((value, idx) => (
+                            <div key={idx} className="flex-1 flex flex-col justify-end">
+                              <div
+                                className="bg-gradient-to-t from-primary to-secondary rounded-t transition-all hover:opacity-80"
+                                style={{ height: `${(value / 5) * 100}%` }}
+                              />
+                              <div className="text-xs text-center mt-1 text-muted-foreground">
+                                {value}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-primary/5 to-secondary/5">
+                <CardHeader>
+                  <CardTitle>Цена</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {comparedProducts.map((product) => (
+                      <div key={product.id} className="text-center">
+                        <div className="text-3xl font-bold text-primary">{product.price}</div>
+                        <Button className="mt-3 w-full bg-gradient-to-r from-primary to-secondary">
+                          <Icon name="ExternalLink" size={16} className="mr-2" />
+                          Купить
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isReviewFormOpen} onOpenChange={setIsReviewFormOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Icon name="MessageSquarePlus" className="text-primary" />
+              Добавить отзыв
+            </DialogTitle>
+            <DialogDescription>
+              Поделитесь своим опытом использования товара
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleReviewSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Ваше имя *</Label>
+              <Input
+                id="name"
+                placeholder="Иван Иванов"
+                value={reviewForm.name}
+                onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Оценка *</Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Icon
+                      name="Star"
+                      size={32}
+                      className={
+                        star <= reviewForm.rating
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'text-gray-300'
+                      }
+                    />
+                  </button>
+                ))}
+                <span className="ml-4 text-2xl font-bold text-primary">
+                  {reviewForm.rating}.0
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="title">Заголовок отзыва *</Label>
+              <Input
+                id="title"
+                placeholder="Отличный товар!"
+                value={reviewForm.title}
+                onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="text">Ваш отзыв *</Label>
+              <Textarea
+                id="text"
+                placeholder="Расскажите подробнее о товаре, его плюсах и минусах..."
+                rows={6}
+                value={reviewForm.text}
+                onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Минимум 50 символов. Текущая длина: {reviewForm.text.length}
+              </p>
+            </div>
+
+            <Card className="bg-muted/50">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Icon name="ShieldCheck" size={18} className="text-primary" />
+                  Правила модерации
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-1">
+                <p>✓ Отзыв должен быть объективным и информативным</p>
+                <p>✓ Запрещены оскорбления и нецензурная лексика</p>
+                <p>✓ Не размещайте личные контакты и ссылки</p>
+                <p>✓ Модерация занимает 1-2 рабочих дня</p>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsReviewFormOpen(false)}
+              >
+                Отмена
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-primary to-secondary"
+              >
+                <Icon name="Send" size={18} className="mr-2" />
+                Отправить отзыв
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
